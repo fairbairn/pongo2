@@ -141,6 +141,8 @@ func tagMacroParser(doc *Parser, start *Token, arguments *Parser) (INodeTag, *Er
 		doc.template.exported_macros[macro_node.name] = macro_node
 	}
 
+	doc.template.macros[macro_node.name] = macro_node
+
 	return macro_node, nil
 }
 

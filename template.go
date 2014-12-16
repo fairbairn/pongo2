@@ -24,6 +24,7 @@ type Template struct {
 	parent          *Template
 	child           *Template
 	blocks          map[string]*NodeWrapper
+	macros 			map[string]*tagMacroNode
 	exported_macros map[string]*tagMacroNode
 
 	// Output
@@ -43,6 +44,7 @@ func newTemplate(set *TemplateSet, name string, is_tpl_string bool, tpl string) 
 		tpl:             tpl,
 		size:            len(tpl),
 		blocks:          make(map[string]*NodeWrapper),
+		macros:			 make(map[string]*tagMacroNode),
 		exported_macros: make(map[string]*tagMacroNode),
 	}
 
