@@ -95,6 +95,7 @@ Please also have a look on the [caveats](https://github.com/flosch/pongo2#caveat
 
 If you're using the `master`-branch of pongo2, you might be interested in this section. Since pongo2 is still in development (even though there is a first stable release!), there could be (backwards-incompatible) API changes over time. To keep track of these and therefore make it painless for you to adapt your codebase, I'll list them here.
 
+ * Function signature for tag execution changed: not taking a `bytes.Buffer` anymore; instead `Execute()`-functions are now taking a `TemplateWriter` interface.
  * Function signature for tag and filter parsing/execution changed (`error` return type changed to `*Error`).
  * `INodeEvaluator` has been removed and got replaced by `IEvaluator`. You can change your existing tags/filters by simply replacing the interface.
  * Two new helper functions: [`RenderTemplateFile()`](https://godoc.org/github.com/flosch/pongo2#RenderTemplateFile) and [`RenderTemplateString()`](https://godoc.org/github.com/flosch/pongo2#RenderTemplateString).
@@ -115,7 +116,8 @@ For a documentation on how the templating language works you can [head over to t
 You can access pongo2's API documentation on [godoc](https://godoc.org/github.com/flosch/pongo2).
 
 ## Blog post series
-
+ 
+ * [pongo2 v3 released](https://www.florian-schlachter.de/post/pongo2-v3/)
  * [pongo2 v2 released](https://www.florian-schlachter.de/post/pongo2-v2/)
  * [pongo2 1.0 released](https://www.florian-schlachter.de/post/pongo2-10/) [August 8th 2014]
  * [pongo2 playground](https://www.florian-schlachter.de/post/pongo2-playground/) [August 1st 2014]

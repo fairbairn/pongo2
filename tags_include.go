@@ -1,9 +1,5 @@
 package pongo2
 
-import (
-	"bytes"
-)
-
 type tagIncludeNode struct {
 	tpl                *Template
 	filename_evaluator IEvaluator
@@ -11,9 +7,10 @@ type tagIncludeNode struct {
 	only               bool
 	filename           string
 	with_pairs         map[string]IEvaluator
+	if_exists          bool
 }
 
-func (node *tagIncludeNode) Execute(ctx *ExecutionContext, buffer *bytes.Buffer) *Error {
+func (node *tagIncludeNode) Execute(ctx *ExecutionContext, writer TemplateWriter) *Error {
 	// Building the context for the template
 	include_ctx := make(Context)
 
@@ -49,21 +46,31 @@ func (node *tagIncludeNode) Execute(ctx *ExecutionContext, buffer *bytes.Buffer)
 
 		included_tpl, err2 := ctx.template.set.FromFile(included_filename)
 		if err2 != nil {
+			// if this is ReadFile error, and "if_exists" flag is enabled
+			if node.if_exists && err2.(*Error).Sender == "fromfile" {
+				return nil
+			}
 			return err2.(*Error)
 		}
-		err2 = included_tpl.ExecuteWriter(include_ctx, buffer)
+		err2 = included_tpl.ExecuteWriter(include_ctx, writer)
 		if err2 != nil {
 			return err2.(*Error)
 		}
 		return nil
 	} else {
 		// Template is already parsed with static filename
-		err := node.tpl.ExecuteWriter(include_ctx, buffer)
+		err := node.tpl.ExecuteWriter(include_ctx, writer)
 		if err != nil {
 			return err.(*Error)
 		}
 		return nil
 	}
+}
+
+type tagIncludeEmptyNode struct{}
+
+func (node *tagIncludeEmptyNode) Execute(ctx *ExecutionContext, writer TemplateWriter) *Error {
+	return nil
 }
 
 func tagIncludeParser(doc *Parser, start *Token, arguments *Parser) (INodeTag, *Error) {
@@ -74,6 +81,9 @@ func tagIncludeParser(doc *Parser, start *Token, arguments *Parser) (INodeTag, *
 	if filename_token := arguments.MatchType(TokenString); filename_token != nil {
 		// prepared, static template
 
+		// "if_exists" flag
+		if_exists := arguments.Match(TokenIdentifier, "if_exists") != nil
+
 		// Get include-filename
 		included_filename := doc.template.set.resolveFilename(doc.template, filename_token.Val)
 
@@ -81,6 +91,10 @@ func tagIncludeParser(doc *Parser, start *Token, arguments *Parser) (INodeTag, *
 		include_node.filename = included_filename
 		included_tpl, err := doc.template.set.FromFile(included_filename)
 		if err != nil {
+			// if this is ReadFile error, and "if_exists" token presents we should create and empty node
+			if err.(*Error).Sender == "fromfile" && if_exists {
+				return &tagIncludeEmptyNode{}, nil
+			}
 			return nil, err.(*Error).updateFromTokenIfNeeded(doc.template, filename_token)
 		}
 		include_node.tpl = included_tpl
@@ -92,6 +106,7 @@ func tagIncludeParser(doc *Parser, start *Token, arguments *Parser) (INodeTag, *
 		}
 		include_node.filename_evaluator = filename_evaluator
 		include_node.lazy = true
+		include_node.if_exists = arguments.Match(TokenIdentifier, "if_exists") != nil // "if_exists" flag
 	}
 
 	// After having parsed the filename we're gonna parse the with+only options
